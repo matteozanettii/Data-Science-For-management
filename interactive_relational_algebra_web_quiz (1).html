@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relational Algebra Interactive Master Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- KaTeX for crisp relational algebra math formatting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-letter {
+      min-width: 1.75rem;
+      height: 1.75rem;
+    }
+    /* KaTeX equation overflow safety on mobile devices */
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.25rem 0;
+    }
+    .katex {
+      font-size: 1.05em;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col selection:bg-sky-500 selection:text-white">
+
+  <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 shadow-lg shadow-black/20">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 text-sm font-bold">RA</span>
+          <h1 class="text-lg lg:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Relational Algebra Practice Quiz
+          </h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">All 19 Lecture Exercises • Dynamic Option Shuffling enabled</p>
+      </div>
+
+      <!-- Quick Metrics & Shuffle Actions -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-medium flex items-center gap-2 shadow-inner">
+          <span class="text-slate-400">Progress:</span>
+          <span id="answered-badge" class="text-sky-400 font-bold font-mono">0 / 19</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-medium flex items-center gap-2 shadow-inner">
+          <span class="text-slate-400">Score:</span>
+          <span id="score-badge" class="text-emerald-400 font-bold font-mono">0% (0/0)</span>
+        </div>
+
+        <button id="shuffle-restart-btn" class="text-xs bg-sky-600 hover:bg-sky-500 active:scale-95 text-white font-semibold rounded-xl px-3.5 py-2 transition-all flex items-center gap-1.5 shadow-md shadow-sky-950/50">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Shuffle & Restart
+        </button>
+
+        <button id="reset-current-btn" class="text-xs bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-medium rounded-xl px-3 py-2 border border-slate-700 transition">
+          Clear Choices
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1">
+    <!-- Status notice -->
+    <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950/30 to-slate-900 border border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-300">
+      <div class="flex items-center gap-2.5">
+        <span class="text-lg">🎲</span>
+        <div>
+          <span class="font-semibold text-white">Randomized Choice Order:</span> Answer choices are randomized using the Fisher-Yates algorithm every time you load or click "Shuffle & Restart".
+        </div>
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer select-none text-slate-300 hover:text-white bg-slate-800/70 px-2.5 py-1.5 rounded-lg border border-slate-700/60">
+        <input type="checkbox" id="shuffle-questions-toggle" class="rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-0">
+        <span>Also shuffle question order</span>
+      </label>
+    </div>
+
+    <!-- Overall Progress bar -->
+    <div class="space-y-1.5 mb-8">
+      <div class="flex justify-between text-xs text-slate-400">
+        <span>Completion Bar</span>
+        <span id="progress-percent-label">0%</span>
+      </div>
+      <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+        <div id="progress-bar-fill" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Container for dynamic questions -->
+    <div id="quiz-container" class="space-y-6"></div>
+  </main>
+
+  <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 bg-slate-950">
+    Relational Algebra Interactive Training • Structured & Unstructured Data Management
+  </footer>
+
+  <script>
+    const rawQuestionsData = [
+      {
+        id: 1,
+        title: "Exercise 1 — Key Constraints",
+        slide: "Slide 4",
+        prompt: "In the instance of Instructor shown in the slides, no two instructors have the same name. From this instance alone, can we conclude that `name` can be used as a superkey (or primary key) of `Instructor`?",
+        options: [
+          { id: "1a", text: "No. A key constraint is a semantic rule that must hold across all legal instances over time, not an accidental uniqueness property of a single database state.", correct: true },
+          { id: "1b", text: "Yes. In the relational model, if an attribute is currently unique in a relation instance, it automatically qualifies as a candidate key.", correct: false },
+          { id: "1c", text: "Yes, provided there are currently no NULL values stored in the `name` column.", correct: false },
+          { id: "1d", text: "No, because primary keys and superkeys can strictly only be assigned to numerical columns like `ID`.", correct: false }
+        ],
+        explanation: "A superkey is an intentional integrity constraint defined on the relational schema that must hold for every possible legal relation instance. Observing distinct names in a temporary snapshot does not preclude the university from hiring another instructor with the same name in the future."
+      },
+      {
+        id: 2,
+        title: "Exercise 2 — Natural Join Semantics",
+        slide: "Slide 5",
+        prompt: "Given `Employee(Name, EmpId, DeptName)` with 4 tuples (Harry/Finance, Sally/Sales, George/Finance, Harriet/Sales) and `Department(DeptName, Manager)` with 3 tuples (Finance/George, Sales/Harriet, Production/Charles), compute $\\text{Employee} \\bowtie \\text{Department}$. What is the result schema and tuple count?",
+        options: [
+          { id: "2a", text: "Schema (Name, EmpId, DeptName, Manager) with 4 tuples.", correct: true },
+          { id: "2b", text: "Schema (Name, EmpId, DeptName, Manager) with 5 tuples.", correct: false },
+          { id: "2c", text: "Schema (Name, EmpId, Employee.DeptName, Department.DeptName, Manager) with 12 tuples.", correct: false },
+          { id: "2d", text: "Schema (Name, EmpId, DeptName, Manager) with 3 tuples.", correct: false }
+        ],
+        explanation: "Natural join ($\\bowtie$) automatically equates attributes with identical names (`DeptName`) and projects away duplicates. All 4 employee tuples find a matching department (Finance or Sales). The 'Production' department has no matching employees, so it does not appear in the inner join."
+      },
+      {
+        id: 3,
+        title: "Exercise 3 — Selection on Single Relation",
+        slide: "Slide 7 (Schema 1)",
+        prompt: "Given Schema 1: `Suppliers(sID, sName, address)`, `Parts(pID, pName, colour)`, `Catalog(sID, pID, price)`. Find all red parts.",
+        options: [
+          { id: "3a", text: "$\\sigma_{\\text{colour} = 'red'}(\\text{Parts})$", correct: true },
+          { id: "3b", text: "$\\pi_{\\text{colour} = 'red'}(\\text{Parts})$", correct: false },
+          { id: "3c", text: "$\\sigma_{\\text{colour} = 'red'}(\\text{Parts} \\bowtie \\text{Catalog})$", correct: false },
+          { id: "3d", text: "$\\pi_{pID, pName}(\\sigma_{\\text{colour} = 'red'}(\\text{Parts}))$", correct: false }
+        ],
+        explanation: "'Find all red parts' requests the complete tuples of the matching parts. This requires only the selection operator $\\sigma_{\\text{colour} = 'red'}$ evaluated directly on `Parts`."
+      },
+      {
+        id: 4,
+        title: "Exercise 4 — Projection & Selection",
+        slide: "Slide 8 (Schema 1)",
+        prompt: "Given Schema 1: Find the names of all red parts.",
+        options: [
+          { id: "4a", text: "$\\pi_{pName}(\\sigma_{\\text{colour} = 'red'}(\\text{Parts}))$", correct: true },
+          { id: "4b", text: "$\\sigma_{\\text{colour} = 'red'}(\\pi_{pName}(\\text{Parts}))$", correct: false },
+          { id: "4c", text: "$\\pi_{pName}(\\text{Parts}) \\bowtie \\sigma_{\\text{colour} = 'red'}(\\text{Catalog})$", correct: false },
+          { id: "4d", text: "$\\pi_{pName, \\text{colour}}(\\sigma_{\\text{colour} = 'red'}(\\text{Parts}))$", correct: false }
+        ],
+        explanation: "We select the rows having $\\text{colour} = 'red'$ from `Parts`, then project ($\\pi$) only the `pName` attribute. Projecting before filtering would eliminate the `colour` attribute needed for the condition."
+      },
+      {
+        id: 5,
+        title: "Exercise 5 — Disjunction (OR Condition)",
+        slide: "Slide 9 (Schema 1)",
+        prompt: "Given Schema 1: Find the names of all parts which are either red or green.",
+        options: [
+          { id: "5a", text: "$\\pi_{pName}(\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: true },
+          { id: "5b", text: "$\\pi_{pName}(\\sigma_{\\text{colour} = 'red' \\land \\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "5c", text: "$\\pi_{pName}(\\sigma_{\\text{colour} = 'red'}(\\text{Parts})) \\cap \\pi_{pName}(\\sigma_{\\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "5d", text: "$\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\pi_{pName}(\\text{Parts}))$", correct: false }
+        ],
+        explanation: "Since an individual part possesses a single atomic colour value per tuple, a single part cannot be simultaneously red and green ($\\text{colour} = 'red' \\land \\text{colour} = 'green'$ would be empty). Disjunction $\\lor$ inside $\\sigma$ is the correct solution."
+      },
+      {
+        id: 6,
+        title: "Exercise 6 — Join Across Multiple Tables",
+        slide: "Slide 10 (Schema 1)",
+        prompt: "Given Schema 1: Find all prices for parts that are red or green. (A part may have different prices from different manufacturers.)",
+        options: [
+          { id: "6a", text: "$\\pi_{\\text{price}}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: true },
+          { id: "6b", text: "$\\pi_{\\text{price}}(\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Catalog}))$", correct: false },
+          { id: "6c", text: "$\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\pi_{\\text{price}}(\\text{Catalog})) \\bowtie \\text{Parts}$", correct: false },
+          { id: "6d", text: "$\\pi_{\\text{price}}(\\text{Catalog} \\bowtie \\text{Suppliers})$", correct: false }
+        ],
+        explanation: "`price` resides in `Catalog` and `colour` resides in `Parts`. The two tables must be joined on their shared attribute `pID`, filtered by the colour condition, and then projected on `price`."
+      },
+      {
+        id: 7,
+        title: "Exercise 7 — Supplier IDs with Matching Parts",
+        slide: "Slide 11 (Schema 1)",
+        prompt: "Given Schema 1: Find the sIDs of all suppliers who supply a part that is red or green.",
+        options: [
+          { id: "7a", text: "$\\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: true },
+          { id: "7b", text: "$\\pi_{sID}(\\text{Suppliers} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "7c", text: "$\\pi_{sID}(\\text{Catalog}) \\cap \\pi_{sID}(\\text{Parts})$", correct: false },
+          { id: "7d", text: "$\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\pi_{sID}(\\text{Catalog}))$", correct: false }
+        ],
+        explanation: "Because `Catalog` stores both `sID` and `pID`, joining `Catalog` directly with the filtered `Parts` allows us to project `sID` without needing to touch the `Suppliers` table."
+      },
+      {
+        id: 8,
+        title: "Exercise 8 — Supplier Supplying Both Colours",
+        slide: "Slide 12 (Schema 1)",
+        prompt: "Given Schema 1: Find the sIDs of all suppliers who supply a part that is red and green (i.e., who supply at least one red part AND at least one green part).",
+        options: [
+          { id: "8a", text: "$\\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red'}(\\text{Parts})) \\cap \\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'green'}(\\text{Parts}))$", correct: true },
+          { id: "8b", text: "$\\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red' \\land \\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "8c", text: "$\\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "8d", text: "$\\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red'}(\\text{Parts})) \\cup \\pi_{sID}(\\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'green'}(\\text{Parts}))$", correct: false }
+        ],
+        explanation: "An individual part tuple only has one colour. Thus, to find a supplier supplying both red and green parts, we must find the set of suppliers providing red parts and intersect ($\\cap$) it with the set of suppliers providing green parts."
+      },
+      {
+        id: 9,
+        title: "Exercise 9 — Three-way Join for Supplier Names",
+        slide: "Slide 13 (Schema 1)",
+        prompt: "Given Schema 1: Find the names of all suppliers who supply a part that is red or green.",
+        options: [
+          { id: "9a", text: "$\\pi_{sName}(\\text{Suppliers} \\bowtie \\text{Catalog} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: true },
+          { id: "9b", text: "$\\pi_{sName}(\\text{Suppliers} \\bowtie \\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Parts}))$", correct: false },
+          { id: "9c", text: "$\\pi_{sName}(\\sigma_{\\text{colour} = 'red' \\lor \\text{colour} = 'green'}(\\text{Suppliers} \\bowtie \\text{Catalog}))$", correct: false },
+          { id: "9d", text: "$\\pi_{sName}(\\text{Suppliers}) - \\pi_{sName}(\\text{Catalog} \\bowtie \\text{Parts})$", correct: false }
+        ],
+        explanation: "`sName` is in `Suppliers`, while colours are in `Parts`. They share no common attribute directly (`Suppliers` has `sID`, `Parts` has `pID`), so they must be linked through `Catalog(sID, pID, price)`."
+      },
+      {
+        id: 10,
+        title: "Exercise 10 — Schema 2 Full Tuples",
+        slide: "Slide 16 (Schema 2)",
+        prompt: "Given Schema 2: `employee(ID, person_name, street, city)`, `works(ID, company_name, salary)`, `company(company_name, city)`. Find all employees who live in the city 'Miami'.",
+        options: [
+          { id: "10a", text: "$\\sigma_{\\text{city} = 'Miami'}(\\text{employee})$", correct: true },
+          { id: "10b", text: "$\\pi_{\\text{city} = 'Miami'}(\\text{employee})$", correct: false },
+          { id: "10c", text: "$\\pi_{person\\_name}(\\sigma_{\\text{city} = 'Miami'}(\\text{employee}))$", correct: false },
+          { id: "10d", text: "$\\text{employee} \\bowtie \\sigma_{\\text{city} = 'Miami'}(\\text{company})$", correct: false }
+        ],
+        explanation: "'Find all employees' asks for the complete tuples of employees satisfying the predicate. A selection $\\sigma_{\\text{city} = 'Miami'}$ directly on `employee` yields all matching rows."
+      },
+      {
+        id: 11,
+        title: "Exercise 11 — Employee Name Projection",
+        slide: "Slide 17 (Schema 2)",
+        prompt: "Given Schema 2: Find the name of each employee who lives in the city 'Miami'.",
+        options: [
+          { id: "11a", text: "$\\pi_{person\\_name}(\\sigma_{\\text{city} = 'Miami'}(\\text{employee}))$", correct: true },
+          { id: "11b", text: "$\\sigma_{\\text{city} = 'Miami'}(\\pi_{person\\_name}(\\text{employee}))$", correct: false },
+          { id: "11c", text: "$\\pi_{\\text{city}}(\\sigma_{person\\_name = 'Miami'}(\\text{employee}))$", correct: false },
+          { id: "11d", text: "$\\pi_{person\\_name}(\\text{employee}) \\bowtie \\sigma_{\\text{city} = 'Miami'}(\\text{company})$", correct: false }
+        ],
+        explanation: "Unlike Exercise 10, here only the names are requested. We filter `employee` for `city = 'Miami'` and project $\\pi_{person\\_name}$."
+      },
+      {
+        id: 12,
+        title: "Exercise 12 — Joining Employee and Works",
+        slide: "Slide 18 (Schema 2)",
+        prompt: "Given Schema 2: Find the name of each employee whose salary is greater than 100000.",
+        options: [
+          { id: "12a", text: "$\\pi_{person\\_name}(\\text{employee} \\bowtie \\sigma_{\\text{salary} > 100000}(\\text{works}))$", correct: true },
+          { id: "12b", text: "$\\pi_{person\\_name}(\\sigma_{\\text{salary} > 100000}(\\text{employee}))$", correct: false },
+          { id: "12c", text: "$\\sigma_{\\text{salary} > 100000}(\\pi_{person\\_name}(\\text{employee} \\bowtie \\text{works}))$", correct: false },
+          { id: "12d", text: "$\\pi_{person\\_name}(\\text{works} \\bowtie \\text{company})$", correct: false }
+        ],
+        explanation: "`salary` is in `works` and `person_name` is in `employee`. We join `employee` with `works` on their common attribute `ID`, filter where $\\text{salary} > 100000$, and project `person_name`."
+      },
+      {
+        id: 13,
+        title: "Exercise 13 — Compound Condition Across Tables",
+        slide: "Slide 19 (Schema 2)",
+        prompt: "Given Schema 2: Find the name of each employee who lives in the city 'Miami' and whose salary is greater than 100000.",
+        options: [
+          { id: "13a", text: "$\\pi_{person\\_name}(\\sigma_{\\text{city} = 'Miami'}(\\text{employee}) \\bowtie \\sigma_{\\text{salary} > 100000}(\\text{works}))$", correct: true },
+          { id: "13b", text: "$\\pi_{person\\_name}(\\sigma_{\\text{city} = 'Miami' \\land \\text{salary} > 100000}(\\text{employee}))$", correct: false },
+          { id: "13c", text: "$\\pi_{person\\_name}(\\sigma_{\\text{city} = 'Miami'}(\\text{employee})) \\cap \\pi_{person\\_name}(\\text{works})$", correct: false },
+          { id: "13d", text: "$\\sigma_{\\text{city} = 'Miami'}(\\pi_{person\\_name}(\\text{employee} \\bowtie \\text{works}))$", correct: false }
+        ],
+        explanation: "`employee` contains `city` while `works` contains `salary`. We filter both relations by their respective predicates, join on `ID`, and project `person_name`."
+      },
+      {
+        id: 14,
+        title: "Exercise 14 — Schema 3 Branch Selection",
+        slide: "Slide 21 (Schema 3)",
+        prompt: "Given Schema 3: `branch(branch_name, branch_city, assets)`, `customer(ID, customer_name, customer_street, customer_city)`, `loan(loan_number, branch_name, amount)`, `borrower(ID, loan_number)`. Find the name of each branch located in 'Chicago'.",
+        options: [
+          { id: "14a", text: "$\\pi_{branch\\_name}(\\sigma_{branch\\_city = 'Chicago'}(branch))$", correct: true },
+          { id: "14b", text: "$\\sigma_{branch\\_name}(\\pi_{branch\\_city = 'Chicago'}(branch))$", correct: false },
+          { id: "14c", text: "$\\sigma_{branch\\_city = 'Chicago'}(branch)$", correct: false },
+          { id: "14d", text: "$\\pi_{branch\\_city}(\\sigma_{branch\\_name = 'Chicago'}(branch))$", correct: false }
+        ],
+        explanation: "Filtering `branch` where $branch\\_city = 'Chicago'$ and projecting $branch\\_name$ produces the requested relation."
+      },
+      {
+        id: 15,
+        title: "Exercise 15 — Borrower with Branch Loan",
+        slide: "Slide 22 (Schema 3)",
+        prompt: "Given Schema 3: Find the ID of each borrower who has a loan in the branch 'Downtown'.",
+        options: [
+          { id: "15a", text: "$\\pi_{ID}(borrower \\bowtie \\sigma_{branch\\_name = 'Downtown'}(loan))$", correct: true },
+          { id: "15b", text: "$\\pi_{ID}(\\sigma_{branch\\_name = 'Downtown'}(borrower))$", correct: false },
+          { id: "15c", text: "$\\pi_{ID}(borrower \\bowtie branch)$", correct: false },
+          { id: "15d", text: "$\\sigma_{branch\\_name = 'Downtown'}(\\pi_{ID}(borrower \\bowtie customer))$", correct: false }
+        ],
+        explanation: "`loan` links `loan_number` with `branch_name`, while `borrower` links `ID` with `loan_number`. Joining them on `loan_number` gives borrowers with loans in Downtown."
+      },
+      {
+        id: 16,
+        title: "Exercise 16 — Universal Negation (Set Difference)",
+        slide: "Slide 23",
+        prompt: "Given `SAILORS(sID, sName, Seniority, DateOfBirth)`, `BOOKINGS(sID, bID, Date)`, `BOATS(bID, BName, Colour)`. Find the names of the sailors who never booked red boats.",
+        options: [
+          { id: "16a", text: "$\\pi_{sName}(SAILORS \\bowtie (\\pi_{sID}(SAILORS) - \\pi_{sID}(BOOKINGS \\bowtie \\sigma_{Colour = 'red'}(BOATS))))$", correct: true },
+          { id: "16b", text: "$\\pi_{sName}(SAILORS \\bowtie BOOKINGS \\bowtie \\sigma_{Colour \\neq 'red'}(BOATS))$", correct: false },
+          { id: "16c", text: "$\\pi_{sName}(SAILORS) - \\pi_{sName}(BOATS)$", correct: false },
+          { id: "16d", text: "$\\sigma_{Colour \\neq 'red'}(\\pi_{sName}(SAILORS \\bowtie BOOKINGS \\bowtie BOATS))$", correct: false }
+        ],
+        explanation: "Filtering by `Colour != 'red'` only finds reservations for non-red boats, but that sailor might still have booked a red boat elsewhere! To represent 'never booked', we take all sailor IDs and subtract ($-$) the IDs of sailors who booked at least one red boat, joining back on `sID` to preserve duplicate names safely."
+      },
+      {
+        id: 17,
+        title: "Exercise 17 — Set Difference on Dates",
+        slide: "Slide 24",
+        prompt: "Given `SHOW(sID, Title, Company, Duration)` and `SCHEDULE(Date, StartingTime, sID, TheatreName)`. Find the names of the companies that acted in shows on 15/10/2003 but not on 23/10/2003.",
+        options: [
+          { id: "17a", text: "$\\pi_{Company}(SHOW \\bowtie \\sigma_{Date = '15/10/2003'}(SCHEDULE)) - \\pi_{Company}(SHOW \\bowtie \\sigma_{Date = '23/10/2003'}(SCHEDULE))$", correct: true },
+          { id: "17b", text: "$\\pi_{Company}(SHOW \\bowtie \\sigma_{Date = '15/10/2003' \\land Date \\neq '23/10/2003'}(SCHEDULE))$", correct: false },
+          { id: "17c", text: "$\\pi_{Company}(SHOW) - \\sigma_{Date = '23/10/2003'}(SCHEDULE)$", correct: false },
+          { id: "17d", text: "$\\pi_{Company}(\\sigma_{Date = '15/10/2003'}(SHOW) \\cap \\sigma_{Date \\neq '23/10/2003'}(SCHEDULE))$", correct: false }
+        ],
+        explanation: "A single performance row cannot have two distinct dates. Thus, we compute companies performing on 15/10/2003 and subtract ($-$) the set of companies performing on 23/10/2003."
+      },
+      {
+        id: 18,
+        title: "Exercise 18 — Theta-Join Self-Matching",
+        slide: "Slide 25",
+        prompt: "Given `FILM(fID, Title, Director, Year, RentingPrice)`, `ACTORS(aID, Surname, Name, DateOfBirth, Nationality)`, `ROLES(fID, aID, Character)`. Find the titles of the films in which the director also played a role as an actor.",
+        options: [
+          { id: "18a", text: "$\\pi_{Title}(FILM \\bowtie_{FILM.fID = ROLES.fID \\land Director = Surname}(ROLES \\bowtie ACTORS))$", correct: true },
+          { id: "18b", text: "$\\pi_{Title}(\\sigma_{Director = Character}(FILM \\bowtie ROLES))$", correct: false },
+          { id: "18c", text: "$\\pi_{Title}(FILM) \\cap \\pi_{Surname}(ACTORS)$", correct: false },
+          { id: "18d", text: "$\\pi_{Title}(\\sigma_{Director = Surname}(FILM) \\bowtie ROLES)$", correct: false }
+        ],
+        explanation: "We join `ROLES` and `ACTORS` on `aID` to attach actor names to film roles, then perform a theta-join with `FILM` requiring that the film IDs match AND that the director's surname matches the actor's surname."
+      },
+      {
+        id: 19,
+        title: "Exercise 19 — Chained Explicit Joins",
+        slide: "Slide 26",
+        prompt: "Given `DRUG(Code, DrugName, ActiveIngredient, Producer, Price)`, `PRODUCERS(ProducerCode, Name, Country)`, `SUBSTANCES(ID, SubstanceName, Category)`. Find for the drugs with an Italian producer, the names of the drugs and the names of the substances of their active ingredient.",
+        options: [
+          { id: "19a", text: "$\\pi_{DrugName, SubstanceName}((\\sigma_{Country = 'Italy'}(PRODUCERS) \\bowtie_{ProducerCode = Producer} DRUG) \\bowtie_{ActiveIngredient = ID} SUBSTANCES)$", correct: true },
+          { id: "19b", text: "$\\pi_{DrugName, ActiveIngredient}(DRUG \\bowtie_{Producer = ProducerCode} \\sigma_{Country = 'Italy'}(PRODUCERS))$", correct: false },
+          { id: "19c", text: "$\\pi_{DrugName, SubstanceName}(DRUG \\bowtie PRODUCERS \\bowtie SUBSTANCES)$", correct: false },
+          { id: "19d", text: "$\\sigma_{Country = 'Italy'}(\\pi_{DrugName, SubstanceName}(DRUG \\bowtie SUBSTANCES))$", correct: false }
+        ],
+        explanation: "Because foreign key attributes have distinct names (`ProducerCode` vs `Producer`, `ActiveIngredient` vs `ID`), natural join cannot automatically connect them. We use explicit theta-joins with the foreign key equivalences before projecting `DrugName` and `SubstanceName`."
+      }
+    ];
+
+    /**
+     * In-place Fisher-Yates (Knuth) Shuffle
+     */
+    function fisherYatesShuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Active state
+    let activeQuestions = [];
+    // Stores user selection mapping: questionId -> optionId
+    let userSelections = {};
+
+    /**
+     * Initializes and shuffles questions and their choices
+     */
+    function initializeQuiz(shuffleQuestions = false) {
+      userSelections = {};
+
+      // Clone questions and shuffle each question's options
+      let prepared = rawQuestionsData.map((q) => {
+        return {
+          id: q.id,
+          title: q.title,
+          slide: q.slide,
+          prompt: q.prompt,
+          explanation: q.explanation,
+          // CRITICAL: Shuffle options so the correct answer moves dynamically
+          options: fisherYatesShuffle(q.options)
+        };
+      });
+
+      if (shuffleQuestions) {
+        prepared = fisherYatesShuffle(prepared);
+      }
+
+      activeQuestions = prepared;
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = '';
+
+      activeQuestions.forEach((q, qIndex) => {
+        const selectedOptionId = userSelections[q.id];
+        const isAnswered = selectedOptionId !== undefined;
+
+        // Check if user answer is correct dynamically by finding the chosen option object
+        const selectedOptionObj = isAnswered ? q.options.find(opt => opt.id === selectedOptionId) : null;
+        const isCorrect = selectedOptionObj ? selectedOptionObj.correct : false;
+
+        const card = document.createElement('div');
+        card.id = `q-card-${q.id}`;
+        card.className = `p-5 sm:p-6 rounded-2xl border transition-all duration-200 ${
+          isAnswered
+            ? isCorrect
+              ? 'bg-slate-900/90 border-emerald-500/60 shadow-lg shadow-emerald-950/20 ring-1 ring-emerald-500/30'
+              : 'bg-slate-900/90 border-rose-500/60 shadow-lg shadow-rose-950/20 ring-1 ring-rose-500/30'
+            : 'bg-slate-900/40 border-slate-800/90 hover:border-slate-700/80'
+        }`;
+
+        // Build option buttons with letters (A, B, C, D)
+        const letters = ['A', 'B', 'C', 'D'];
+        let optionsHtml = q.options.map((opt, optIndex) => {
+          const letter = letters[optIndex] || `${optIndex + 1}`;
+          let buttonClasses = "border-slate-800 bg-slate-900/80 hover:bg-slate-800 hover:border-slate-700 text-slate-200";
+          let badgeClasses = "bg-slate-800 border-slate-700 text-slate-400 group-hover:text-slate-200";
+          let iconHtml = ``;
+
+          if (isAnswered) {
+            if (opt.correct) {
+              buttonClasses = "border-emerald-500/80 bg-emerald-950/30 text-emerald-200 font-medium ring-1 ring-emerald-500/50";
+              badgeClasses = "bg-emerald-500 text-slate-950 font-bold border-emerald-400";
+              iconHtml = `<span class="ml-auto text-emerald-400 text-sm font-bold">✓ Correct Answer</span>`;
+            } else if (opt.id === selectedOptionId) {
+              buttonClasses = "border-rose-500/80 bg-rose-950/30 text-rose-200 ring-1 ring-rose-500/50";
+              badgeClasses = "bg-rose-500 text-white font-bold border-rose-400";
+              iconHtml = `<span class="ml-auto text-rose-400 text-sm font-bold">✕ Your Choice</span>`;
+            } else {
+              buttonClasses = "border-slate-900 bg-slate-950/40 text-slate-500 opacity-50 cursor-not-allowed";
+              badgeClasses = "bg-slate-900 border-slate-800 text-slate-600";
+            }
+          }
+
+          return `
+            <button
+              type="button"
+              onclick="handleSelectOption(${q.id}, '${opt.id}')"
+              ${isAnswered ? 'disabled' : ''}
+              class="group w-full text-left p-3.5 sm:p-4 rounded-xl border text-sm flex items-start gap-3 transition-all duration-150 ${buttonClasses}">
+              <span class="badge-letter rounded-lg border flex items-center justify-center text-xs font-mono font-semibold shrink-0 transition-colors ${badgeClasses}">
+                ${letter}
+              </span>
+              <div class="leading-relaxed flex-1 pt-0.5 overflow-x-auto custom-scroll">
+                ${opt.text}
+              </div>
+              ${iconHtml}
+            </button>
+          `;
+        }).join('');
+
+        // Feedback card
+        let feedbackHtml = '';
+        if (isAnswered) {
+          feedbackHtml = `
+            <div class="mt-4 p-4 rounded-xl text-xs sm:text-sm leading-relaxed border ${
+              isCorrect ? 'bg-emerald-950/20 border-emerald-800/60 text-emerald-300' : 'bg-rose-950/20 border-rose-800/60 text-rose-300'
+            }">
+              <div class="font-bold flex items-center gap-2 mb-1.5 text-sm sm:text-base">
+                <span>${isCorrect ? '✓ Excellent! You got it right.' : '✕ Incorrect.'}</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">${q.explanation}</p>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-3 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-400 font-mono">Q${qIndex + 1} • ${q.title}</span>
+            </div>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700/60">${q.slide}</span>
+          </div>
+          <div class="text-slate-100 font-medium text-sm sm:text-base mb-4 leading-relaxed">${q.prompt}</div>
+          <div class="space-y-2.5">${optionsHtml}</div>
+          ${feedbackHtml}
+        `;
+
+        container.appendChild(card);
+      });
+
+      renderMathFormulas();
+      updateMetrics();
+    }
+
+    window.handleSelectOption = function(questionId, optionId) {
+      if (userSelections[questionId] !== undefined) return;
+      userSelections[questionId] = optionId;
+      renderQuiz();
+    };
+
+    function updateMetrics() {
+      const answeredCount = Object.keys(userSelections).length;
+      let correctCount = 0;
+
+      activeQuestions.forEach((q) => {
+        const chosenId = userSelections[q.id];
+        if (chosenId) {
+          const chosen = q.options.find(opt => opt.id === chosenId);
+          if (chosen && chosen.correct) {
+            correctCount++;
+          }
+        }
+      });
+
+      const total = activeQuestions.length;
+      document.getElementById('answered-badge').innerText = `${answeredCount} / ${total}`;
+      const percentage = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+      document.getElementById('score-badge').innerText = `${percentage}% (${correctCount}/${answeredCount})`;
+
+      const progressPct = Math.round((answeredCount / total) * 100);
+      document.getElementById('progress-bar-fill').style.width = `${progressPct}%`;
+      document.getElementById('progress-percent-label').innerText = `${progressPct}%`;
+    }
+
+    function renderMathFormulas() {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.getElementById('quiz-container'), {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
+    document.getElementById('shuffle-restart-btn').addEventListener('click', () => {
+      const shuffleQuestions = document.getElementById('shuffle-questions-toggle').checked;
+      initializeQuiz(shuffleQuestions);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.getElementById('reset-current-btn').addEventListener('click', () => {
+      userSelections = {};
+      renderQuiz();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.getElementById('shuffle-questions-toggle').addEventListener('change', (e) => {
+      initializeQuiz(e.target.checked);
+    });
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      initializeQuiz(false);
+      setTimeout(renderMathFormulas, 250);
+    });
+  </script>
+</body>
+</html>
