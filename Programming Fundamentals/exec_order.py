@@ -1,0 +1,8 @@
+phrase=input("Insert a phrase with a lot of space:   ")
+temp=phrase.split()
+print(temp)
+first=temp.copy()
+second=temp.copy()
+first.sort()
+second.reverse()
+print("copy1: {} \ncopy2: {}".format(first,second))
