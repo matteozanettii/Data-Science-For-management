@@ -3,14 +3,13 @@ select name, surname
 from employee
 where salary between 10 and 30
 order by salary desc
---3
-SELECT employee.name, surname
-FROM employee, project, participation
-WHERE employeeid = participantid 
-  AND projectcode = project_id_or_code 
-  AND employee.name = 'Matteo' 
-  AND projectcode = 'Alpha';
-  order by surname desc
+--3,4
+SELECT e.name, e.surname
+FROM employee e, project p
+WHERE e.employeeid = p.participantid 
+  AND e.name = 'Matteo' 
+  AND p.projectcode = 'Alpha';
+  order by e.surname desc
   --5
   select distinct e1.name,e1.surname
   from employee e1, employee e2
