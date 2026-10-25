@@ -1,6 +1,8 @@
+--1,2
 select name, surname
 from employee
-where salary >10 and salary <30 desc
+where salary between 10 and 30
+order by salary desc
 --3
 SELECT employee.name, surname
 FROM employee, project, participation
