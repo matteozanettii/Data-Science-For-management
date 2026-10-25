@@ -10,18 +10,18 @@ WHERE e.employeeid = p.participantid
   AND e.name = 'Matteo' 
   AND p.projectcode = 'Alpha';
   order by e.surname desc
-  --5
+--5,6
   select distinct e1.name,e1.surname
   from employee e1, employee e2
-  where e1.surname=e2.surname
-  and e1.department="Shippings"
-  and e2.department="management"
-  order by e1.surname desc
-  --7
-  select p.departments
+  where e1.name=e2.name
+  and e1.department='Shipping'
+  and e2.department='management'
+  order by e1.surname asc;
+  --7,8
+  select e.departments
   from employee e, participation p
-  where p.projectcode == "Alpha"
-  and e.employeeid == p.participantid
+  where p.projectcode = "Alpha"
+  and e.employeeid = p.participantid
   order by p.departments desc
   --9,10,12
   select d.director,d.location,d.name
