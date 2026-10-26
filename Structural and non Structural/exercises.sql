@@ -29,6 +29,11 @@ WHERE e.employeeid = p.participantid
   where e.name= 'Marco'
   and e.surname='Bruni'
   and e.department=dir.name -- implicit join
+  -- 11 (beta)
+  select distinct e.name, e.surname
+  from employee e, project p
+  where p.projectcode='Apollo'
+  and p.manager=e.employeeid
 
   --9,10,12
   select d.director,d.location,d.name
