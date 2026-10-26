@@ -34,6 +34,13 @@ WHERE e.employeeid = p.participantid
   from employee e, project p
   where p.projectcode='Apollo'
   and p.manager=e.employeeid
+  -- 12 (beta)
+  select distinct d.name, d.surname
+  from employee e, department de, employee d
+  where e.name = 'Marco'
+  and e.surname = 'Bruni'
+  and e.department=de.name
+  and de.director=d.employeeid
 
   --9,10,12
   select d.director,d.location,d.name
