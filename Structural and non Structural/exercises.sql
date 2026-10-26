@@ -23,6 +23,13 @@ WHERE e.employeeid = p.participantid
   where e.employeeid = p.participantid
   and p.projectcode = 'Alpha'
   order by e.department asc
+  -- 10 (beta)
+  select distinct dir.director
+  from employee e, department dir
+  where e.name= 'Marco'
+  and e.surname='Bruni'
+  and e.department=dir.name -- implicit join
+
   --9,10,12
   select d.director,d.location,d.name
   from employee e, department d
