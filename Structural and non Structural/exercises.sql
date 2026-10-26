@@ -26,13 +26,14 @@ WHERE e.employeeid = p.participantid
   --9,10,12
   select d.director,d.location,d.name
   from employee e, department d
-  where e.name="Marco"
-  and e.surname="Bruni"
+  where e.department = d.name
+  where e.name='Marco'
+  and e.surname='Bruni'
   -- 11
   select e.name,e.surname 
   from employee e, participation p
   where p.projectcode = "Apollo"
-and p.manager=e.employeeid
+  and p.manager=e.employeeid
 --13
 select p.budget 
 from employee e , project p, participation part
@@ -40,11 +41,11 @@ from employee e , project p, participation part
  and e.surname="Bruni"
  and e.employeeid=part.participantid
  and part.projectcode=p.projectcode
---15
+--14,15
 select e.name,e.surname
 from employee e , department d, employee mng
-where d.name=e.department
-and d.director=e.employeeid
+where e.department=d.name
+and d.director=mng.employeeid
 and e.salary > mng.salary
 order by e.salary asc
 
