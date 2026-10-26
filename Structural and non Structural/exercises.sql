@@ -1,37 +1,39 @@
+--1,2
 select name, surname
 from employee
-where salary >10 and salary <30 desc
---3
-SELECT employee.name, surname
-FROM employee, project, participation
-WHERE employeeid = participantid 
-  AND projectcode = project_id_or_code 
-  AND employee.name = 'Matteo' 
-  AND projectcode = 'Alpha';
-  order by surname desc
-  --5
+where salary between 10 and 30
+order by salary desc
+--3,4
+SELECT e.name, e.surname
+FROM employee e, project p
+WHERE e.employeeid = p.participantid 
+  AND e.name = 'Matteo' 
+  AND p.projectcode = 'Alpha';
+  order by e.surname desc
+--5,6
   select distinct e1.name,e1.surname
   from employee e1, employee e2
-  where e1.surname=e2.surname
-  and e1.department="Shippings"
-  and e2.department="management"
-  order by e1.surname desc
-  --7
-  select p.departments
+  where e1.name=e2.name
+  and e1.department='Shipping'
+  and e2.department='management'
+  order by e1.surname asc;
+  --7,8
+  select e.departments
   from employee e, participation p
-  where p.projectcode == "Alpha"
-  and e.employeeid == p.participantid
+  where p.projectcode = "Alpha"
+  and e.employeeid = p.participantid
   order by p.departments desc
   --9,10,12
   select d.director,d.location,d.name
   from employee e, department d
-  where e.name="Marco"
-  and e.surname="Bruni"
+  where e.department = d.name
+  where e.name='Marco'
+  and e.surname='Bruni'
   -- 11
   select e.name,e.surname 
   from employee e, participation p
   where p.projectcode = "Apollo"
-and p.manager=e.employeeid
+  and p.manager=e.employeeid
 --13
 select p.budget 
 from employee e , project p, participation part
@@ -39,11 +41,11 @@ from employee e , project p, participation part
  and e.surname="Bruni"
  and e.employeeid=part.participantid
  and part.projectcode=p.projectcode
---15
+--14,15
 select e.name,e.surname
 from employee e , department d, employee mng
-where d.name=e.department
-and d.director=e.employeeid
+where e.department=d.name
+and d.director=mng.employeeid
 and e.salary > mng.salary
 order by e.salary asc
 
