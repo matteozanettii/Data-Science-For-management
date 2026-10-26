@@ -18,11 +18,11 @@ WHERE e.employeeid = p.participantid
   and e2.department='management'
   order by e1.surname asc;
   --7,8
-  select e.departments
+  select distinct e.department
   from employee e, participation p
-  where p.projectcode = "Alpha"
-  and e.employeeid = p.participantid
-  order by p.departments desc
+  where e.employeeid = p.participantid
+  and p.projectcode = 'Alpha'
+  order by e.department asc
   --9,10,12
   select d.director,d.location,d.name
   from employee e, department d
