@@ -2,7 +2,7 @@
 select distinct e.name,e.surname
 from employee e,participation par
 where e.employeeid=par.participantid
-and e.salary > (select max(ee.salary)
+and e.salary >= (select max(ee.salary)
                 from employee ee, participation part
                 where ee.employeeid = part.participantid
                 and par.projectcode=part.projectcode
